@@ -246,7 +246,7 @@
 // stp TX buffer at end of mem
 #define TXSTOP_INIT      0x1FFF
 // max frame length which the conroller will accept:
-#define   MAX_FRAMELEN    1518        // (note: maximum ethernet frame length would be 1518)
+#define   MAX_FRAMELEN    151        // (note: maximum ethernet frame length would be 1518)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
 
@@ -268,6 +268,7 @@ uint32_t ENC28J60_Packet_Receive(uint32_t maxlen,uint8_t* packet);
 
 uint8_t tapdev_init(void);
 uint16_t tapdev_read(void);
+void tapdev_send(void);
 #endif
 
 

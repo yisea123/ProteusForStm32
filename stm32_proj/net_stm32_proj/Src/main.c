@@ -37,6 +37,10 @@
 /* USER CODE BEGIN Includes */
 #include "stm32f1xx_hal_uart.h"
 #include "enc28j60.h"
+#include "tapdev.h"
+#include "uip.h"
+#include "uip_arp.h"
+#include "timer.h"	
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -46,10 +50,29 @@ TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart1;
 
-/* USER CODE BEGIN PV */
+/* USER CODE BEGIN PV */ 
 /* Private variables ---------------------------------------------------------*/
+#define ARP_LEN 60
+u32 uip_timer=0;//uip 计时器，每10ms增加1.
+#define BUF ((struct uip_eth_hdr *)&uip_buf[0])	 	
 extern uint16_t uip_len, uip_slen;
-extern uint8_t uip_buf[2048 + 2]; 
+extern uint8_t uip_buf[UIP_BUFSIZE + 2]; 
+uint8_t arpdata[ARP_LEN]={//mac 0x04,0x02,0x35,0x00,0x00,0x01 self ip:0xc0,0xa8,0x5f,0xc8 query ip :0xc0,0xa8,0x0a,0x01
+	0xff,0xff,0xff,0xff,0xff,0xff,
+	0x04,0x02,0x35,0x00,0x00,0x01,
+//	0x01,0x00,0x00,0x35,0x02,0x04,
+	
+	0x08,0x06,0x00,0x01,0x08,0x00,0x06,0x04,0x00,0x01,
+	
+	0x04,0x02,0x35,0x00,0x00,0x01,
+//	0x01,0x00,0x00,0x35,0x02,0x04,
+	0xc0,0xa8,0x38,0xc8,
+	0x00,0x00,0x00,0x00,0x00,0x00,
+	0xc0,0xa8,0x38,0x01,
+	 
+	0x00,0x00,0x00,0x00,0x00,0x00
+,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,7 +99,7 @@ struct __FILE
 
 }; 
 
-FILE __stdout;       
+extern FILE __stdout;       
 //定义_sys_exit()以避免使用半主机模式    
 void _sys_exit(int x) 
 { 
@@ -97,9 +120,13 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	static struct timer periodic_timer, arp_timer;
 	uint8_t sptdata=0x84;
 	uint8_t spid[2]={0x23,0xff},spidr[2];
 	uint16_t i;
+	u8 timer_ok=0;	 
+	uint32_t tickstart = 0, tickend=0;
+  uip_ipaddr_t ipaddr;
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -110,38 +137,71 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-  /* Initialize all configured peripherals */
+  /* Initialize all configured peripherals */ 
   MX_GPIO_Init();
-  MX_SPI1_Init();
+  MX_SPI1_Init();  
   MX_USART1_UART_Init();
-  MX_TIM1_Init();
+  MX_TIM1_Init(); 
 
-  /* USER CODE BEGIN 2 */
-	printf("this is proteus demo\r\ntime:%s\r\n",__TIME__);
-	tapdev_init();
-//	
+  /* USER CODE BEGIN 2 */ 
+	
+	printf("Athis is proteus demo\r\ntime:%s\r\n",__TIME__);
+//	ENC28J60_Reset();
+//	while(0){ 
+//		sptdata = ENC28J60_Read(ESTAT);
+//		printf("ESTAT:%x \r\n",sptdata);
+//		HAL_Delay(10);
+//	}  
+	while(tapdev_init())
+	{
+		printf("tapdev_init error\r\n");
+	}
+	printf("tapdev_init \r\n");
+	HAL_Delay(100);
+// 	uip_ipaddr(ipaddr, 192,168,95,16);	//设置本地设置IP地址
+//	uip_sethostaddr(ipaddr);					    
+//	uip_ipaddr(ipaddr, 192,168,95,1); 	//设置网关IP地址(其实就是你路由器的IP地址)
+//	uip_setdraddr(ipaddr);						 
+//	uip_ipaddr(ipaddr, 255,255,255,0);	//设置网络掩码
+//	uip_setnetmask(ipaddr);
   /* USER CODE END 2 */
  
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
+  while (1) 
   {
-  /* USER CODE END WHILE */
+  /* USER CODE END WHILE */ 
 
   /* USER CODE BEGIN 3 */
-		HAL_GPIO_WritePin(GPIOA,TESTIO_Pin,GPIO_PIN_RESET);
-		HAL_Delay(100);
-		HAL_GPIO_WritePin(GPIOA,TESTIO_Pin,GPIO_PIN_SET);
-		HAL_Delay(100);
+//		HAL_GPIO_WritePin(GPIOA,TESTIO_Pin,GPIO_PIN_RESET);
+//		HAL_Delay(100);
+//		HAL_GPIO_WritePin(GPIOA,TESTIO_Pin,GPIO_PIN_SET);
+//		HAL_Delay(100);
+
 		uip_len=tapdev_read();	//从网络设备读取一个IP包,得到数据长度.uip_len在uip.c中定义
 		if(uip_len>0) 			//有数据
 		{
-			printf("rec a packet:\r\n");
-			for(i=0;i<uip_len;i++)
+			printf("rec a packet uip_len %d:",uip_len);
+			for(i=0;i<uip_len;i++){ 
+				if(i%16 == 0)
+					printf("\r\n");
 				printf("%x ",uip_buf[i]);
+
+			}
 			printf("\r\nover\r\n");
 		}
-		sptdata = 0x23;
+//		for(i=0;i<500;i++);
+		HAL_Delay(1);
+//		uip_len = ARP_LEN;
+//		printf("send a packet:");
+//		for(i=0;i<uip_len;i++){
+//			uip_buf[i] = arpdata[i];
+//			if(i%16 == 0)
+//					printf("\r\n");
+//			printf("%x ",uip_buf[i]);
+//		}
+//		printf("\r\nover\r\n");
+//		tapdev_send();
 //		HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_RESET);
 //		HAL_SPI_Transmit(&hspi1,&sptdata,1,10);
 //		HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);
@@ -153,9 +213,80 @@ int main(void)
 //		HAL_SPI_TransmitReceive(&hspi1,spid,spidr,2,10);
 //		HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);
 //		printf("%x %x\n\r",spidr[0],spidr[1]);
-  }
+//		if(timer_ok==0)
+//		{
+//			timer_ok=1;
+//			timer_set(&periodic_timer,CLOCK_SECOND/2);  //创建1个0.5秒的定时器 
+//			timer_set(&arp_timer,CLOCK_SECOND*10);	   	//创建1个10秒的定时器 
+//			tickstart = HAL_GetTick();
+//			tickend = tickstart;
+//		}
+//		tickstart = HAL_GetTick();
+//		if(tickstart - tickend > 10)
+//		{
+//			tickend = tickstart;
+//			uip_timer++;//uip计时器增加1	
+//		}
+//		uip_len=tapdev_read();	//从网络设备读取一个IP包,得到数据长度.uip_len在uip.c中定义
+//		if(uip_len>0) 			//有数据
+//		{   
+//			//处理IP数据包(只有校验通过的IP包才会被接收) 
+//			if(BUF->type == htons(UIP_ETHTYPE_IP))//是否是IP包? 
+//			{
+//				uip_arp_ipin();	//去除以太网头结构，更新ARP表
+//				uip_input();   	//IP包处理
+//				//当上面的函数执行后，如果需要发送数据，则全局变量 uip_len > 0
+//				//需要发送的数据在uip_buf, 长度是uip_len  (这是2个全局变量)		    
+//				if(uip_len>0)//需要回应数据
+//				{
+//					uip_arp_out();//加以太网头结构，在主动连接时可能要构造ARP请求
+//					tapdev_send();//发送数据到以太网
+//				}
+//			}else if (BUF->type==htons(UIP_ETHTYPE_ARP))//处理arp报文,是否是ARP请求包?
+//			{
+//				uip_arp_arpin();
+//				//当上面的函数执行后，如果需要发送数据，则全局变量uip_len>0
+//				//需要发送的数据在uip_buf, 长度是uip_len(这是2个全局变量)
+//				if(uip_len>0)tapdev_send();//需要发送数据,则通过tapdev_send发送	 
+//			}
+//		}else if(timer_expired(&periodic_timer))	//0.5秒定时器超时
+//		{
+//			timer_reset(&periodic_timer);		//复位0.5秒定时器 
+//			//轮流处理每个TCP连接, UIP_CONNS缺省是40个  
+//			for(i=0;i<UIP_CONNS;i++)
+//			{
+//				uip_periodic(i);	//处理TCP通信事件  
+//				//当上面的函数执行后，如果需要发送数据，则全局变量uip_len>0
+//				//需要发送的数据在uip_buf, 长度是uip_len (这是2个全局变量)
+//				if(uip_len>0)
+//				{
+//					uip_arp_out();//加以太网头结构，在主动连接时可能要构造ARP请求
+//					tapdev_send();//发送数据到以太网
+//				}
+//			}
+//	#if UIP_UDP	//UIP_UDP 
+//			//轮流处理每个UDP连接, UIP_UDP_CONNS缺省是10个
+//			for(i=0;i<UIP_UDP_CONNS;i++)
+//			{
+//				uip_udp_periodic(i);	//处理UDP通信事件
+//				//当上面的函数执行后，如果需要发送数据，则全局变量uip_len>0
+//				//需要发送的数据在uip_buf, 长度是uip_len (这是2个全局变量)
+//				if(uip_len > 0)
+//				{
+//					uip_arp_out();//加以太网头结构，在主动连接时可能要构造ARP请求
+//					tapdev_send();//发送数据到以太网
+//				}
+//			}
+//	#endif 
+//			//每隔10秒调用1次ARP定时器函数 用于定期ARP处理,ARP表10秒更新一次，旧的条目会被抛弃
+//			if(timer_expired(&arp_timer))
+//			{
+//				timer_reset(&arp_timer);
+//				uip_arp_timer();
+//			}
+//		}
   /* USER CODE END 3 */
-
+	}
 }
 
 /** System Clock Configuration
@@ -170,7 +301,7 @@ void SystemClock_Config(void)
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = 16;
+  RCC_OscInitStruct.HSICalibrationValue = 16; 
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
@@ -205,7 +336,7 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
-/* SPI1 init function */
+/* SPI1 init function */ 
 static void MX_SPI1_Init(void)
 {
 
@@ -296,7 +427,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, enc28j60_rst_Pin|SPI_NSS_Pin|TESTIO_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, enc28j60_rst_Pin|SPI_NSS_Pin|TESTIO_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : enc28j60_rst_Pin SPI_NSS_Pin TESTIO_Pin */
   GPIO_InitStruct.Pin = enc28j60_rst_Pin|SPI_NSS_Pin|TESTIO_Pin;

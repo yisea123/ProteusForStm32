@@ -1,14 +1,15 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <WORKSPACE>
  <FRAME activewindow="0">
-  <PLACEMENT>2c00000000000000010000000083ffff0083ffffffffffffffffffff490000000c00000047060000e6030000</PLACEMENT>
+  <PLACEMENT>2c0000000200000003000000ffffffffffffffffffffffffffffffff920000001800000090060000f2030000</PLACEMENT>
   <WINDOW type="default" module="ISIS"/>
+  <WINDOW type="default" module="VSMDEBUG"/>
  </FRAME>
  <MODULE name="VSMDEBUG">
   <PWI>
-   <POPUP w="800" x="119" flags="00000002" y="148" h="200" pid="0" iid="-1">
+   <POPUP w="1045" x="91" flags="00000003" y="519" h="417" pid="0" iid="-1">
     <PROPERTIES>
-     <ITEM name="Message Column Width">542</ITEM>
+     <ITEM name="Message Column Width">787</ITEM>
      <ITEM name="ShowGrid">No</ITEM>
      <ITEM name="Source Column Width">100</ITEM>
      <ITEM name="Time Column Width">120</ITEM>
@@ -32,10 +33,10 @@
      <ITEM name="nItems">0</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="695" x="154" flags="00000001" y="444" h="450" pid="0" iid="10">
+   <POPUP w="695" x="46" flags="00000001" y="482" h="450" pid="0" iid="10">
     <PROPERTIES/>
    </POPUP>
-   <POPUP w="450" x="294" flags="00008023" y="207" h="250" pid="0" iid="7">
+   <POPUP w="513" x="1144" flags="00000023" y="203" h="584" pid="0" iid="7">
     <PROPERTIES>
      <ITEM name="AutoEcho">0</ITEM>
      <ITEM name="HexMode">0</ITEM>
@@ -341,7 +342,7 @@
      <ITEM name="TopLineAddress">E000E000</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="600" x="799" flags="0000002b" y="610" h="400" pid="100" iid="1">
+   <POPUP w="600" x="1028" flags="0000002b" y="560" h="400" pid="100" iid="1">
     <PROPERTIES>
      <ITEM name="CaseSensitive">No</ITEM>
      <ITEM name="DISPADDRS">Yes</ITEM>
@@ -352,7 +353,7 @@
      <ITEM name="nBreakpoints">0</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="300" x="819" flags="0000000b" y="710" h="300" pid="101" iid="1">
+   <POPUP w="300" x="1380" flags="0000000b" y="668" h="300" pid="101" iid="1">
     <PROPERTIES>
      <ITEM name="Address Column Width">94</ITEM>
      <ITEM name="AutoResize">No</ITEM>

@@ -117,7 +117,7 @@
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
           <Simulator>
-            <UseSimulator>0</UseSimulator>
+            <UseSimulator>1</UseSimulator>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -128,7 +128,7 @@
             <LimitSpeedToRealTime>0</LimitSpeedToRealTime>
           </Simulator>
           <Target>
-            <UseTarget>1</UseTarget>
+            <UseTarget>0</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
             <RunToMain>1</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
@@ -139,7 +139,7 @@
             <RestoreTracepoints>0</RestoreTracepoints>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>13</TargetSelection>
+          <TargetSelection>10</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -351,7 +351,7 @@
               <MiscControls>--C99</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103x6</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\Src\ENC28J60</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\Src\ENC28J60;..\uIP-1.0\uip;..\uIP-APP;..\uIP-1.0\apps\webserver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -511,6 +511,101 @@
               <FileName>system_stm32f1xx.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/system_stm32f1xx.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>UIP1.0</GroupName>
+          <Files>
+            <File>
+              <FileName>psock.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\psock.c</FilePath>
+            </File>
+            <File>
+              <FileName>timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>uip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uip.c</FilePath>
+            </File>
+            <File>
+              <FileName>uip_arp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uip_arp.c</FilePath>
+            </File>
+            <File>
+              <FileName>uip-fw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uip-fw.c</FilePath>
+            </File>
+            <File>
+              <FileName>uiplib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uiplib.c</FilePath>
+            </File>
+            <File>
+              <FileName>uip-neighbor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uip-neighbor.c</FilePath>
+            </File>
+            <File>
+              <FileName>uip-split.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\uip\uip-split.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>UIPApp</GroupName>
+          <Files>
+            <File>
+              <FileName>clock-arch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-APP\clock-arch.c</FilePath>
+            </File>
+            <File>
+              <FileName>tapdev.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-APP\tapdev.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_client_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-APP\tcp_client_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-APP\tcp_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_server_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-APP\tcp_server_demo.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\apps\webserver\httpd.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd-cgi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\apps\webserver\httpd-cgi.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd-fs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\apps\webserver\httpd-fs.c</FilePath>
+            </File>
+            <File>
+              <FileName>http-strings.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\uIP-1.0\apps\webserver\http-strings.c</FilePath>
             </File>
           </Files>
         </Group>

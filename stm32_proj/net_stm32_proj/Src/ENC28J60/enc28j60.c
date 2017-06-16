@@ -14,10 +14,14 @@ static uint8_t ENC28J60BANK;
 static uint32_t NextPacketPtr;
 extern SPI_HandleTypeDef hspi1;
 
-uint8_t uip_buf[2048 + 2];   /* The packet buffer that contains
-				    incoming packets. */
-uint16_t uip_len, uip_slen;
-struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
+//uint8_t uip_buf[2048 + 2];   /* The packet buffer that contains
+//				    incoming packets. */
+extern uint16_t  uip_slen;
+uint8_t uip_buf[100];
+
+uint16_t uip_len;
+//struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
+
 //MAC地址,必须唯一
 //如果你有两个战舰开发板,想连入路由器,则需要修改MAC地址不一样!
 const uint8_t mymac[6]={0x04,0x02,0x35,0x00,0x00,0x01};	//MAC地址
@@ -32,13 +36,15 @@ uint8_t tapdev_init(void)
 		printf("init error %d\r\n",res);
 	else
 		printf("initial ok \r\n");
-	//把IP地址和MAC地址写入缓存区
- 	for (i = 0; i < 6; i++)uip_ethaddr.addr[i]=mymac[i];  
+	
+//	//把IP地址和MAC地址写入缓存区
+// 	for (i = 0; i < 6; i++)uip_ethaddr.addr[i]=mymac[i];  
     //指示灯状态:0x476 is PHLCON LEDA(绿)=links status, LEDB(红)=receive/transmit
  	//PHLCON：PHY 模块LED 控制寄存器	    
 	ENC28J60_PHY_Write(PHLCON,0x0476);
 	return res;	
 }
+
 //读取一包数据  
 uint16_t tapdev_read(void)
 {	
@@ -49,7 +55,6 @@ void tapdev_send(void)
 {
 	ENC28J60_Packet_Send(uip_len,uip_buf);
 }
-
 
 //复位ENC28J60
 //包括SPI初始化/IO初始化等
@@ -105,16 +110,19 @@ void tapdev_send(void)
 void ENC28J60_Reset(void)
 {
 	uint8_t dat=0xff,datr;
-	HAL_SPI_TransmitReceive(&hspi1,&dat,&datr,1,10);
 //	ENC28J60_SPI2_Init();//SPI2初始化
 //	SPI2_SetSpeed(SPI_BaudRatePrescaler_4);	//SPI2 SCK频率为36M/4=9Mhz
 // 	TIM6_Int_Init(1000,719);//100Khz计数频率，计数到1000为10ms
 //	ENC28J60_RST=0;			//复位ENC28J60
 	HAL_GPIO_WritePin(GPIOA,enc28j60_rst_Pin,GPIO_PIN_RESET);
-	HAL_Delay(100);	 
+	HAL_Delay(10);	 
 	HAL_GPIO_WritePin(GPIOA,enc28j60_rst_Pin,GPIO_PIN_SET);
 //	ENC28J60_RST=1;			//复位结束				    
-	HAL_Delay(100);	 
+	HAL_Delay(10);	 
+	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_RESET);	
+	HAL_SPI_TransmitReceive(&hspi1,&dat,&datr,1,10);
+	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);
+	HAL_Delay(10);	
 }
 //读取ENC28J60寄存器(带操作码) 
 //op：操作码
@@ -137,6 +145,8 @@ uint8_t ENC28J60_Read_Op(uint8_t op,uint8_t addr)
  	if(addr&0x80){HAL_SPI_TransmitReceive(&hspi1,&dat,&datr,1,10);}
 //	ENC28J60_CS=1;
 	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);	
+//	printf("dat:%x datr:%x\r\n",op|(addr&ADDR_MASK),datr);
+//	HAL_Delay(1);
 	return datr;
 }
 //读取ENC28J60寄存器(带操作码) 
@@ -157,6 +167,8 @@ void ENC28J60_Write_Op(uint8_t op,uint8_t addr,uint8_t data)
 //	HAL_SPI_Transmit(&hspi1,&data,1,10);
 //	ENC28J60_CS=1;
 	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);	
+//	printf("dat:%x data:%x\r\n",dat,data);
+//	HAL_Delay(1);
 }
 //读取ENC28J60接收缓存数据
 //len:要读取的数据长度
@@ -169,16 +181,19 @@ void ENC28J60_Read_Buf(uint32_t len,uint8_t* data)
 //	SPI2_ReadWriteByte(ENC28J60_READ_BUF_MEM);
 	tmp = ENC28J60_READ_BUF_MEM;
 	HAL_SPI_TransmitReceive(&hspi1,&tmp,&datr,1,10);
-//	HAL_SPI_Transmit(&hspi1,&tmp,1,10);
-	while(len)
-	{
-		len--;			  
-//		*data=(uint8_t)SPI2_ReadWriteByte(0);
-//		HAL_SPI_Receive(&hspi1,data,1,10);
-		HAL_SPI_TransmitReceive(&hspi1,data,&datr,1,10);
-		data++;
-	}
-	*data='\0';
+	tmp = 0;
+	HAL_SPI_TransmitReceive(&hspi1,&tmp,data,len,10);
+	data = data + len;
+//	*data='\0';
+//	while(len)
+//	{
+//		len--;			  
+////		*data=(uint8_t)SPI2_ReadWriteByte(0);
+////		HAL_SPI_Receive(&hspi1,data,1,10);
+//		HAL_SPI_TransmitReceive(&hspi1,data,&datr,1,10);
+//		data++;
+//	}
+//	*data='\0';
 //	ENC28J60_CS=1;
 	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);
 }
@@ -187,21 +202,24 @@ void ENC28J60_Read_Buf(uint32_t len,uint8_t* data)
 //data:数据缓存区 
 void ENC28J60_Write_Buf(uint32_t len,uint8_t* data)
 {
-	uint8_t tmp,datr;
+	uint8_t tmp,datr,res;
 //	ENC28J60_CS=0;		
 	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_RESET);	
 //	SPI2_ReadWriteByte(ENC28J60_WRITE_BUF_MEM);		 
 	tmp = ENC28J60_READ_BUF_MEM;
 //	HAL_SPI_Transmit(&hspi1,&tmp,1,10);
 	HAL_SPI_TransmitReceive(&hspi1,&tmp,&datr,1,10);
-	while(len)
-	{
-		len--;
-//		SPI2_ReadWriteByte(*data);
-//		HAL_SPI_Transmit(&hspi1,data,1,10);
-		HAL_SPI_TransmitReceive(&hspi1,data,&datr,1,10);
-		data++;
-	}
+	res = HAL_SPI_TransmitReceive(&hspi1,data,0,len,10);
+	if(res == HAL_TIMEOUT)
+		printf("HAL_TIMEOUT\r\n");
+//	while(len)
+//	{
+//		len--;
+////		SPI2_ReadWriteByte(*data);
+////		HAL_SPI_Transmit(&hspi1,data,1,10);
+//		HAL_SPI_TransmitReceive(&hspi1,data,&datr,1,10);
+//		data++;
+//	}
 //	ENC28J60_CS=1;
 	HAL_GPIO_WritePin(GPIOA,SPI_NSS_Pin,GPIO_PIN_SET);
 }
@@ -254,10 +272,13 @@ uint8_t ENC28J60_Init(uint8_t* macaddr)
 	ENC28J60_Write_Op(ENC28J60_SOFT_RESET,0,ENC28J60_SOFT_RESET);//软件复位
 	while(!(ENC28J60_Read(ESTAT)&ESTAT_CLKRDY)&&retry<500)//等待时钟稳定
 	{
+//		retry = ENC28J60_Read(ESTAT);
+//		printf("ESTAT:%x \r\n",retry);
 		retry++;
 		HAL_Delay(1);
 	};
-	if(retry>=500)return 2;//ENC28J60初始化失败
+	if(retry>=100)return 2;//ENC28J60初始化失败
+	HAL_Delay(10);
 	// do bank 0 stuff
 	// initialize receive buffer
 	// 16-bit transfers,must write low byte first
@@ -321,6 +342,7 @@ uint8_t ENC28J60_Init(uint8_t* macaddr)
 	//1 = 符合格式匹配条件的数据包将被接受
 	//0 = 禁止过滤器
 	ENC28J60_Write(ERXFCON,ERXFCON_UCEN|ERXFCON_CRCEN|ERXFCON_PMEN);
+//	ENC28J60_Write(ERXFCON,0);
 	ENC28J60_Write(EPMM0,0x3f);
 	ENC28J60_Write(EPMM1,0x30);
 	ENC28J60_Write(EPMCSL,0xf9);
@@ -411,7 +433,7 @@ uint8_t ENC28J60_Init(uint8_t* macaddr)
 	//bit 6 PKTIE： 接收数据包待处理中断允许位
 	//1 = 允许接收数据包待处理中断
 	//0 = 禁止接收数据包待处理中断
-	ENC28J60_Write_Op(ENC28J60_BIT_FIELD_SET,EIE,EIE_INTIE|EIE_PKTIE);
+//	ENC28J60_Write_Op(ENC28J60_BIT_FIELD_SET,EIE,EIE_INTIE|EIE_PKTIE);
 	// enable packet reception
 	//bit 2 RXEN：接收使能位
 	//1 = 通过当前过滤器的数据包将被写入接收缓冲器
@@ -458,8 +480,12 @@ void ENC28J60_Packet_Send(uint32_t len,uint8_t* packet)
 uint32_t ENC28J60_Packet_Receive(uint32_t maxlen,uint8_t* packet)
 {
 	uint32_t rxstat;
-	uint32_t len;    													 
-	if(ENC28J60_Read(EPKTCNT)==0)return 0;  //是否收到数据包?	   
+	uint32_t len;   
+	if( !(ENC28J60_Read(EIR)) & EIR_PKTIF)
+	{
+		if(ENC28J60_Read(EPKTCNT)==0)
+			return 0;  //是否收到数据包?	   
+	}
 	//设置接收缓冲器读指针
 	ENC28J60_Write(ERDPTL,(NextPacketPtr));
 	ENC28J60_Write(ERDPTH,(NextPacketPtr)>>8);	   
@@ -477,8 +503,10 @@ uint32_t ENC28J60_Packet_Receive(uint32_t maxlen,uint8_t* packet)
 	if (len>maxlen-1)len=maxlen-1;	
 	//检查CRC和符号错误
 	// ERXFCON.CRCEN为默认设置,一般我们不需要检查.
-	if((rxstat&0x80)==0)len=0;//无效
-	else ENC28J60_Read_Buf(len,packet);//从接收缓冲器中复制数据包	    
+	if((rxstat&0x80)==0)
+		len=0;//无效
+	else 
+		ENC28J60_Read_Buf(len,packet);//从接收缓冲器中复制数据包	    
 	//RX读指针移动到下一个接收到的数据包的开始位置 
 	//并释放我们刚才读出过的内存
 	ENC28J60_Write(ERXRDPTL,(NextPacketPtr));
